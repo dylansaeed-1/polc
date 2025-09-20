@@ -11,9 +11,9 @@ Instead of relying purely on data or physics losses, we insert **one lightweight
 1. Predict pressure with a neural operator.  
 2. Query a C++ finite-volume/finite-element solver (via gRPC) for the discrete residual and one conjugate-gradient update.  
 3. Apply a learnable “trust” correction:  
-   $$
+   $
    p_\theta^{corr} = p_\theta + \alpha \Delta p
-   $$
+   $
 
 ---
 
