@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+.DS_Store
+*.pth
+*.pt
+*.log
+results/
+data/
+build/
+cpp_solver/build
+.vscode
