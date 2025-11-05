@@ -32,7 +32,7 @@ void apply_A_1D(const Field1D& K, const Field1D& p, const BC1D& bc, Field1D& Ap)
         f0 = -K(0) * (2 * (p(0) - bc.left.val) / dx);   
     }
     else if (bc.left.type == BCSide::Type::Neumann){
-        f0 = -bc.left.val;
+        f0 = bc.left.val;
     }
     Ap(0)-= (f0/dx);
 
