@@ -5,7 +5,6 @@
 
 #pragma once
 
-
 /*
 Flux sign > 0 means flow to the +x direction
 
@@ -18,7 +17,7 @@ operator value per cell is (Ap)_i = (F_{i+1/2} - F_{i-1/2}) /(dx)
 N = 3 => | 0 | 1 | 2 |
 */
 
-void apply_A_1D(const Field1D& K, const Field1D& p, const BC1D& bc, Field1D& Ap){
+void apply_A_1D(const Field1D& K, const BC1D& bc, const Field1D& p, Field1D& Ap){
     //Sanity checks
     assert(K.size() == p.size());
     Ap.fill(0.0);
@@ -60,8 +59,8 @@ void apply_A_1D(const Field1D& K, const Field1D& p, const BC1D& bc, Field1D& Ap)
     return;
 }
 
-void residual_1D(const Field1D& K, const Field1D& p, const BC1D& bc, const Field1D& q, Field1D& r){
-    apply_A_1D(K, p, bc, r);
+void residual_1D(const Field1D& K, const BC1D& bc, const Field1D& p, const Field1D& q, Field1D& r){
+    apply_A_1D(K, bc, p, r);
     for(auto i = 0; i < r.v.size(); ++i){
         r(i)-= q(i);
     }

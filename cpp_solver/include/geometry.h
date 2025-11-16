@@ -26,7 +26,12 @@ struct Field1D{
     const Grid1D& g;
     std::vector<double> v;
     explicit Field1D(Grid1D& grid, double init=0.0) : g(grid), v(static_cast<size_t>(grid.N), init){}
+    Field1D(Field1D& x): g(x.g), v(x.v){}
 
+    Field1D& operator=(Field1D other){
+        std::swap(v, other.v);
+        return *this;
+    }
     double& operator()(int i){ return v[static_cast<size_t>(i)];}
     double operator()(int i) const {return v[static_cast<size_t>(i)];}
     inline int size() const {return g.N;}
