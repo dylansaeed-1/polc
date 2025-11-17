@@ -20,6 +20,14 @@ struct Grid1D{
 
 };
 
+struct Grid2D{
+    int Nx, Ny;
+    double Lx, Ly;
+    double dx, dy;
+
+    //Maybe helper functions
+};
+
 
 //Storing Scalar fields
 struct Field1D{
@@ -38,21 +46,59 @@ struct Field1D{
     inline void fill(const double val){std::fill(v.begin(), v.end(), val);}
 };
 
+struct Field2D{
+    const Grid2D g;
+    std::vector<double> v;
+    explicit Field2D(Grid2D& grid, double init=0.0) : g(grid), v(static_cast<size_t>(grid.Nx*grid.Ny), init) {};
+    
+    Field2D(Field2D& x) : g(x.g), v(x.v) {};
+    Field2D& operator=(Field2D other){
+        std::swap(v, other.v);
+        return *this;
+    }
+    inline int idx(int i, int j) const {return g.Nx*j + i;} //i = x, j = y
+    double& operator()(int i, int j){
+        return v[this->idx(i, j)];
+    }
+    const double& operator()(const int i, const int j) const{
+        return v[this->idx(i, j)];
+    }
+    inline int size() const {return (int)v.size();}
+    inline void fill(const double val){ std::fill(v.begin(), v.end(), val);} 
+};
+
+
 //Storing boundary conditions
-struct BCSide{
+struct BCSide1D{
     enum class Type {Dirichlet, Neumann};
     Type type;
     double val; //pressure if Dirichlet, flux if Neumann
 
-    static BCSide Dirichlet(double p){
+    static BCSide1D Dirichlet(double p){
         return {Type::Dirichlet, p};
     }
-    static BCSide Neumann(double g){
+    static BCSide1D Neumann(double g){
         return {Type::Neumann, g};
     }
 };
 
+struct BCSide2D{
+    enum class Type {Dirichlet, Neumann};
+    Type type;
+    std::vector<double> val; //pressure if Dirichlet, flux if Neumann
+
+    static BCSide2D Dirichlet(std::vector<double>& p){
+        return {Type::Dirichlet, p};
+    }
+    static BCSide2D Neumann(std::vector<double>& g){
+        return {Type::Neumann, g};
+    }
+};
+
+struct BC2D{
+    BCSide2D left, right, bottom, top;
+};
+
 struct BC1D{ //  boundary condiiton object
-    BCSide left;
-    BCSide right;
+    BCSide1D left, right;
 };
