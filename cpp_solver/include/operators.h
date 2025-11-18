@@ -1,3 +1,4 @@
+#include "linalg.h"
 #include <iostream>
 #include <vector>
 #include <cassert>
@@ -17,7 +18,7 @@ operator value per cell is (Ap)_i = (F_{i+1/2} - F_{i-1/2}) /(dx)
 N = 3 => | 0 | 1 | 2 |
 */
 
-void apply_A_1D(const Field1D& K, const BC1D& bc, const Field1D& p, Field1D& Ap){
+inline void apply_A_1D(const Field1D& K, const BC1D& bc, const Field1D& p, Field1D& Ap){
     //Sanity checks
     assert(K.size() == p.size());
     Ap.fill(0.0);
@@ -59,7 +60,7 @@ void apply_A_1D(const Field1D& K, const BC1D& bc, const Field1D& p, Field1D& Ap)
     return;
 }
 
-void apply_A_2D(const Field2D& K, const BC2D& bc, const Field2D& p, Field2D& Ap){
+inline void apply_A_2D(const Field2D& K, const BC2D& bc, const Field2D& p, Field2D& Ap){
     assert(K.size() == p.size());
     Ap.fill(0.0);
  
@@ -138,9 +139,13 @@ void apply_A_2D(const Field2D& K, const BC2D& bc, const Field2D& p, Field2D& Ap)
 }
 
 
-void residual_1D(const Field1D& K, const BC1D& bc, const Field1D& p, const Field1D& q, Field1D& r){
+inline void residual_1D(const Field1D& K, const BC1D& bc, const Field1D& p, const Field1D& q, Field1D& r){
     apply_A_1D(K, bc, p, r);
     for(auto i = 0; i < r.size(); ++i){
         r(i)-= q(i);
     }
+}
+inline void residual_2D(const Field2D& K, const BC2D& bc, const Field2D& p, const Field2D& q, Field2D& r){
+    apply_A_2D(K, bc, p, r);
+    axpy(-1.0, q, r); // y + ax
 }

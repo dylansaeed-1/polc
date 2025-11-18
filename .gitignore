@@ -9,3 +9,4 @@ data/
 build/
 cpp_solver/build
 .vscode
+cpp_solver/.cache

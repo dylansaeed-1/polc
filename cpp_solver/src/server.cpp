@@ -50,14 +50,54 @@ void run_test_lienar(int N){
     // return iters;
 }
 
+void run_test_2D(int N){
+    int Nx = N;
+    int Ny = N;
+    double Lx = 1.0;
+    double Ly = 1.0;
+
+    Grid2D grid(Nx, Ny, Lx, Ly);
+
+    Field2D K(grid, 1.0);   // K = 1
+    Field2D q(grid, 0.0);   // RHS = 0
+    Field2D p(grid, 0.0);   // initial guess
+    auto bc_val = std::vector<double>(Nx, 1.0);
+    BC2D bc{
+        BCSide2D::Dirichlet(bc_val),  // left
+        BCSide2D::Dirichlet(bc_val),  // right
+        BCSide2D::Dirichlet(bc_val),  // bottom
+        BCSide2D::Dirichlet(bc_val)   // top
+    };
+
+    int max_iter = 5000;
+    double tol = 1e-10;
+
+    int iters = cg_solve_2D(K, bc, q, p, max_iter, tol);
+
+    // Check max error vs p_exact = 1
+    double max_err = 0.0;
+    for (int j = 0; j < Ny; ++j) {
+        for (int i = 0; i < Nx; ++i) {
+            double err = std::abs(p(i,j) - 1.0);
+            if (err > max_err) max_err = err;
+        }
+    }
+
+    std::cout << "CG 2D converged in " << iters << " iterations\n";
+    std::cout << "Max error = " << max_err << "\n";
+}
+
 
 int main() {
     
-    int N_test[3] = {50, 100, 200};
-    for (auto val : N_test){
-        std::cout << val << " ";
-        run_test_lienar(val);
-    }   
+    // int N_test[3] = {50, 100, 200};
+    // for (auto val : N_test){
+    //     std::cout << val << " ";
+    //     run_test_lienar(val);
+    // }   
+
+    int N = 32;
+    run_test_2D(N);
 
     return 0;
 }

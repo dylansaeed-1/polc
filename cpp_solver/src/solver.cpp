@@ -1,5 +1,5 @@
 #include <geometry.h>
-#include <lingalg.h>
+#include <linalg.h>
 #include <operators.h>
 
 #include <iostream>

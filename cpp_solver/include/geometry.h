@@ -24,7 +24,7 @@ struct Grid2D{
     int Nx, Ny;
     double Lx, Ly;
     double dx, dy;
-
+    Grid2D(int Nx, int Ny, double Lx, double Ly): Nx(Nx), Ny(Ny), Lx(Lx), Ly(Ly), dx(Lx/Nx), dy(Ly/Ny) {};
     //Maybe helper functions
 };
 

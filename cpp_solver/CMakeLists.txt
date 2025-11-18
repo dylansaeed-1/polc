@@ -17,7 +17,7 @@ endif()
 # Warnings (no -Werror yet; don't block progress)
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
   # add_compile_options(-Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion)
-  add_compile_options(-Wall -Wextra -Wpedantic -Wconversion)
+  add_compile_options(-Wall -Wextra)
 
 elseif (MSVC)
   add_compile_options(/W4)

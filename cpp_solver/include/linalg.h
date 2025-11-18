@@ -1,53 +1,59 @@
 #include <iostream>
 #include <vector>
 #include <math.h>
+#include <cassert>
 #pragma once
 
 //dot product
-auto dot(const Field1D&a , const Field1D& b) -> double{
+template <typename Field>
+auto dot(const Field&a , const Field& b) -> double{
     assert(a.size() == b.size());
     
     double val = 0;
     for(int i = 0; i < a.size(); ++i){
-        val+= (a(i)*b(i));
+        val+= (a.v[i]*b.v[i]);
     }
     return val;
 }
 
 // y= y + ax
-auto axpy(const double a, const Field1D& x, Field1D& y) -> void{
+template <typename Field>
+auto axpy(const double a, const Field& x, Field& y) -> void{
     assert(x.size() == y.size());
     
     for(int i = 0; i < y.size(); ++i){
-        y(i)+= (a*x(i));
+        y.v[i]+= (a*x.v[i]);
     }
 }
 
-
-auto norm2(const Field1D& x) -> double{ 
+template <typename Field>
+auto norm2(const Field& x) -> double{ 
     return sqrt(dot(x, x));
 }
 
 // Src -> dst
-auto copy(const Field1D& x, Field1D& y) -> void{
+template <typename Field>
+auto copy(const Field& x, Field& y) -> void{
     assert(x.size() == y.size());
     
     for (int i = 0; i < x.size(); ++i){
-        y(i) = x(i);
+        y.v[i] = x.v[i];
     }
 } 
 
 // Scaling  a * x
-auto scal(const double a, Field1D& x) -> void{
-    for (int i = 0; i < x.size(); ++i){
-        x(i) *= a;
+template <typename Field>
+auto scal(const double a, Field& x) -> void{
+    for (auto& xi : x.v){
+        xi *= a;
     }
 }
 
-auto inf_norm(Field1D& x) -> double{
+template <typename Field>
+auto inf_norm(Field& x) -> double{
     double norm_inf = 0.0;
-    for(int i = 0; i < x.size(); ++i){
-        norm_inf = std::max(norm_inf, x(i));
+    for(auto xi : x.v){
+        norm_inf = std::max(norm_inf, xi);
     }
     return norm_inf;
 }
