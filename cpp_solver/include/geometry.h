@@ -1,6 +1,6 @@
 #include <iostream>
 #include <vector>
-
+#include <cassert>
 #pragma once
 
 
@@ -26,6 +26,19 @@ struct Grid2D{
     double dx, dy;
     Grid2D(int Nx, int Ny, double Lx, double Ly): Nx(Nx), Ny(Ny), Lx(Lx), Ly(Ly), dx(Lx/Nx), dy(Ly/Ny) {};
     //Maybe helper functions
+
+    inline double x_cell(int i) const{
+        return (i + 0.5) * dx;
+    }
+    inline double x_face(int f) const{
+        return (f * dx);
+    }
+    inline double y_cell(int i) const{
+        return (i + 0.5) * dy;
+    }
+    inline double y_face(int f) const{
+        return (f * dy);
+    }
 };
 
 
@@ -63,6 +76,14 @@ struct Field2D{
     const double& operator()(const int i, const int j) const{
         return v[this->idx(i, j)];
     }
+    Field2D operator-(const Field2D& other){
+        assert(other.size() == this->size());
+        for(int i = 0; i < other.size(); ++i){
+            this->v[i]-=other.v[i];
+        }
+        return *this;
+    }
+
     inline int size() const {return (int)v.size();}
     inline void fill(const double val){ std::fill(v.begin(), v.end(), val);} 
 };
@@ -86,12 +107,19 @@ struct BCSide2D{
     enum class Type {Dirichlet, Neumann};
     Type type;
     std::vector<double> val; //pressure if Dirichlet, flux if Neumann
-
-    static BCSide2D Dirichlet(std::vector<double>& p){
-        return {Type::Dirichlet, p};
+    // static BCSide2D Dirichlet(std::vector<double>& p){
+        //     return {Type::Dirichlet, p};
+        // }
+        // static BCSide2D Neumann(std::vector<double>& g){
+            //     return {Type::Neumann, g};
+            // }
+    static BCSide2D Dirichlet(int N, double p){
+        auto temp = std::vector<double>(N, p);
+        return {Type::Dirichlet, temp};
     }
-    static BCSide2D Neumann(std::vector<double>& g){
-        return {Type::Neumann, g};
+    static BCSide2D Neumann(int N, double g){
+        auto temp = std::vector<double>(N, g);
+        return {Type::Neumann, temp};
     }
 };
 

@@ -29,7 +29,7 @@ inline auto cg_solve_1D(
     double del_0 = del_new;
     while (i < max_iter and del_new > pow(tol, 2)*del_0){
         apply_A_1D(K, bc, d, z); // z = Ad
-        axpy(-1.0, c, z);
+        axpy(-1.0,  c, z);
         auto alpha = del_new/dot(d, z);
         
         axpy(alpha, d, p); //x = x + alpha*d
@@ -48,7 +48,7 @@ inline auto cg_solve_1D(
 
 inline auto cg_solve_2D(
     const Field2D& K, 
-    const BC2D& bc, 
+    // const BC2D& bc, 
     const Field2D& q, 
     Field2D& p, 
     int max_iter=100,
@@ -59,16 +59,16 @@ inline auto cg_solve_2D(
     auto grid = K.g;
     Field2D r(grid), z(grid), c(grid);
 
-    apply_A_2D(K, bc, p, c);
-    residual_2D(K, bc, p, q, r);
+    // apply_A_2D(K, p, c);
+    residual_2D(K, p, q, r);
     scal(-1.0, r); //r = b - Ax
     
     auto d = r;
     double del_new = dot(r, r);
     double del_0 = del_new;
     while (i < max_iter and del_new > pow(tol, 2)*del_0){
-        apply_A_2D(K, bc, d, z); // z = Ad
-        axpy(-1.0, c, z);
+        apply_A_2D(K, d, z); // z = Ad
+        // axpy(-1.0, c, z);
         auto alpha = del_new/dot(d, z);
         
         axpy(alpha, d, p); //x = x + alpha*d
