@@ -14,7 +14,7 @@
 => darcy operator K d/dx (p) = (2x, 2y) and so q(x,y) = -4.
 
 */
-void run_test_2D(int N){
+void run_test_CG(int N){
     
     int Nx = N, Ny = N;
     Grid2D grid(Nx, Ny, 1.0, 1.0);
@@ -55,10 +55,44 @@ void run_test_2D(int N){
     std::cout << "CG 2D converged in " << iters << " iterations\n";
 }
 
+void run_test_JFNK(int N){
+    
+    int Nx = N, Ny = N;
+    Grid2D grid(Nx, Ny, 1.0, 1.0);
+    Field2D p(grid), q_nl(grid), p_exact(grid), R(grid);
+
+    BC2D bc{
+        BCSide2D::Dirichlet(Ny, 0.0),  // left
+        BCSide2D::Dirichlet(Ny, 0.0),  // right
+        BCSide2D::Dirichlet(Nx, 0.0),  // bottom
+        BCSide2D::Dirichlet(Nx, 0.0)   // top
+    };
+
+    for (int i = 0; i < Nx; ++i){
+        double y = grid.y_face(i);
+        for (int j = 0; j < Ny; ++j){
+            double x = grid.x_face(j);
+            p_exact(i, j) = cos(PI * x) * sin(PI * y);
+        }
+    }
+
+    Field2D q_zero(grid, 0.0);
+    richards_residual(p_exact, q_zero, bc, R);
+
+    q_nl = R;
+    
+    auto F = [&](const Field2D& p, Field2D& r){ //Residual function we want to minimise
+        richards_residual(p, q_nl, bc, r);
+    };
+    //Solving Ax = q-g
+    int iters = jfnk_solve_2D(F, p);
+    write_field_csv(p, "p_case1_jfnk.csv");
+    std::cout << "JFNK 2D converged in " << iters << " Newton iterations\n";
+}
+
 int main() {    
     int N = 50;
-    run_test_2D(N);
-
+    run_test_JFNK(N);
     return 0;
 }
 

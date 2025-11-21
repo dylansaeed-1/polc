@@ -1,4 +1,5 @@
 #include "linalg.h"
+#include <functional>
 #include <iostream>
 #include <vector>
 #include <cassert>
@@ -169,6 +170,24 @@ inline void build_bc_contrib(const Field2D& K, const BC2D& bc, Field2D& g){
     }
 }
 
+inline void jv_fd(
+    const std::function<void(const Field2D& p, Field2D& F)> F, // Residual computation given current p iterate
+    const Field2D& p,
+    const Field2D& v,
+    Field2D& Jv,
+    double eps=1e-6
+){
+    Field2D p_eps(p.g), f0(p.g), f_eps(p.g);
+    p_eps = p;
+    axpy(eps, v, p_eps); // p_eps = p + eps*v
+    F(p, f0); 
+    F(p_eps, f_eps);
+
+    Jv = f_eps - f0;
+    scal(1.0/eps, Jv);
+}
+
+
 inline void residual_1D(const Field1D& K, const BC1D& bc, const Field1D& p, const Field1D& q, Field1D& r){
     apply_A_1D(K, bc, p, r);
     for(auto i = 0; i < r.size(); ++i){
@@ -180,10 +199,15 @@ inline void residual_2D(const Field2D& K, const Field2D& p, const Field2D& q, Fi
     axpy(-1.0, q, r); // y + ax
 }
 
-inline void richards_residual(const Field2D& p, Field2D& R) {
+inline void richards_residual(const Field2D& p, const Field2D& q, const BC2D& bc, Field2D& R) {
     // 1. Compute K(p)  
     // 2. Compute Ap = ∇·(K(p) ∇p)
     // 3. R = Ap - q + g
-    (void) p;
-    (void) R;
-}
+    // Basic test, let K(p) = (1 + p^2)
+    auto grid = p.g;
+    Field2D K(grid, 1.0), Ap(grid, 0.0), g(grid, 0.0);
+    K+=p*p;
+    apply_A_2D(K, p, Ap);
+    build_bc_contrib(K, bc, g);
+    R = Ap - q + g;
+} 

@@ -61,7 +61,7 @@ struct Field1D{
 struct Field2D{
     const Grid2D g;
     std::vector<double> v;
-    explicit Field2D(Grid2D& grid, double init=0.0) : g(grid), v(static_cast<size_t>(grid.Nx*grid.Ny), init) {};
+    explicit Field2D(const Grid2D& grid, const double init=0.0) : g(grid), v(static_cast<size_t>(grid.Nx*grid.Ny), init) {};
     
     Field2D(const Field2D& x) : g(x.g), v(x.v) {};
     Field2D& operator=(Field2D other){
@@ -75,6 +75,7 @@ struct Field2D{
     const double& operator()(const int i, const int j) const{
         return v[this->idx(i, j)];
     }
+    //Vector operations
     Field2D& operator-=(const Field2D& other){
         assert(size() == other.size());
         for(int i = 0; i < size(); ++i){
@@ -100,6 +101,21 @@ struct Field2D{
         result += other;
         return result;
     }
+    Field2D& operator*=(const Field2D& other){
+        assert(other.size() == size());
+        for(int i = 0; i < size(); ++i){
+            v[i]*=other.v[i];
+        }
+        return *this;
+    }
+    Field2D operator*(const Field2D& other) const{
+        Field2D result = *this;
+        result*=other;
+        return result;
+    }
+    
+
+
     inline int size() const {return (int)v.size();}
     inline void fill(const double val){ std::fill(v.begin(), v.end(), val);} 
 };

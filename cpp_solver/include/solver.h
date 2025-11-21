@@ -82,3 +82,35 @@ inline auto cg_solve_2D(
     }
     return i;
 }
+
+inline int jfnk_solve_2D(
+    std::function<void(const Field2D& p, Field2D& F)> F,
+    Field2D& p,
+    int max_newton = 20,
+    double tol=1e-6
+){
+    Field2D R(p.g), dp(p.g), v(p.g ,0.0);
+    /*
+    Outer Newton loop
+    Solves J(p_k)*v = -F(p_k)
+    F(p_k) = residual at p_k
+    J(p_k)*v is approximated using finite differences jp_v(p_k)
+        Inner Krylov loop (CG)
+        Solves J(p_k)*v = -F(p_k) using conjugate gradient method
+    */
+    for(int iter = 0; iter < max_newton; ++iter){
+        F(p, R);
+        double err = norm2(R);
+        if (err < tol){
+            return iter;
+        }
+        scal(-1.0, R);
+        auto Jv = [&](const Field2D& v, Field2D& Jv_out){
+            jv_fd(F, p, v, Jv_out);
+        };
+        dp.fill(0.0);
+        cg_solve_2D(Jv, R, dp, 200, 1e-16);
+        axpy(1.0, dp, p); // p_k+1 = p_k + dp
+    }
+    return max_newton;
+}
