@@ -179,3 +179,11 @@ inline void residual_2D(const Field2D& K, const Field2D& p, const Field2D& q, Fi
     apply_A_2D(K, p, r);
     axpy(-1.0, q, r); // y + ax
 }
+
+inline void richards_residual(const Field2D& p, Field2D& R) {
+    // 1. Compute K(p)  
+    // 2. Compute Ap = ∇·(K(p) ∇p)
+    // 3. R = Ap - q + g
+    (void) p;
+    (void) R;
+}

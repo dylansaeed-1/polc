@@ -5,7 +5,7 @@
 #include <math.h>
 #include <numeric>
 #include <linalg.h>
-#include <cg.h>
+#include <solver.h>
 #include <utils.h>
 #define PI 3.14159265
 
