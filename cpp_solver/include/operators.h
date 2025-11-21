@@ -60,6 +60,8 @@ inline void apply_A_1D(const Field1D& K, const BC1D& bc, const Field1D& p, Field
     return;
 }
 
+// TODO(dylan): factor BC loops into a generic boundary helper once
+// Darcy–Richards & Newton are in place.
 inline void apply_A_2D(const Field2D& K, const Field2D& p, Field2D& Ap){
     assert(K.size() == p.size());
     Ap.fill(0.0);
@@ -100,8 +102,8 @@ inline void apply_A_2D(const Field2D& K, const Field2D& p, Field2D& Ap){
     //Bottom boundary (Dirichlet only for now)
     for (int i = 0; i < Nx; ++i){
         K_r = K(i, 0);
-        F = -K_r * (2.0 * (p(i, 0))/dx);
-        Ap(i, 0)-= F/dx;
+        F = -K_r * (2.0 * (p(i, 0))/dy);
+        Ap(i, 0)-= F/dy;
     }
 
     //Right boundary (Dirichlet only for now)
@@ -114,8 +116,8 @@ inline void apply_A_2D(const Field2D& K, const Field2D& p, Field2D& Ap){
     //Top boundary (Dirichlet only for now)
     for (int i = 0; i < Nx; ++i){
         K_r = K(i, Ny-1);
-        F = -K_r * (2.0 * (p(i, Ny-1))/dx);
-        Ap(i, Ny-1)-= F/dx;
+        F = -K_r * (2.0 * (p(i, Ny-1))/dy);
+        Ap(i, Ny-1)-= F/dy;
     }
 }
 

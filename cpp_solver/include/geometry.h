@@ -25,7 +25,6 @@ struct Grid2D{
     double Lx, Ly;
     double dx, dy;
     Grid2D(int Nx, int Ny, double Lx, double Ly): Nx(Nx), Ny(Ny), Lx(Lx), Ly(Ly), dx(Lx/Nx), dy(Ly/Ny) {};
-    //Maybe helper functions
 
     inline double x_cell(int i) const{
         return (i + 0.5) * dx;
@@ -64,7 +63,7 @@ struct Field2D{
     std::vector<double> v;
     explicit Field2D(Grid2D& grid, double init=0.0) : g(grid), v(static_cast<size_t>(grid.Nx*grid.Ny), init) {};
     
-    Field2D(Field2D& x) : g(x.g), v(x.v) {};
+    Field2D(const Field2D& x) : g(x.g), v(x.v) {};
     Field2D& operator=(Field2D other){
         std::swap(v, other.v);
         return *this;
@@ -76,14 +75,31 @@ struct Field2D{
     const double& operator()(const int i, const int j) const{
         return v[this->idx(i, j)];
     }
-    Field2D operator-(const Field2D& other){
-        assert(other.size() == this->size());
-        for(int i = 0; i < other.size(); ++i){
-            this->v[i]-=other.v[i];
+    Field2D& operator-=(const Field2D& other){
+        assert(size() == other.size());
+        for(int i = 0; i < size(); ++i){
+            v[i] -= other.v[i];
         }
         return *this;
     }
+    Field2D operator-(const Field2D& other) const {
+        Field2D result = *this;
+        result -= other;
+        return result;
+    }
 
+    Field2D& operator+=(const Field2D& other){
+        assert(other.size() == size());
+        for(int i = 0; i < other.size(); ++i){
+            v[i]+=other.v[i];
+        }
+        return *this;
+    }
+    Field2D operator+(const Field2D& other) const {
+        Field2D result = *this;
+        result += other;
+        return result;
+    }
     inline int size() const {return (int)v.size();}
     inline void fill(const double val){ std::fill(v.begin(), v.end(), val);} 
 };
@@ -107,12 +123,6 @@ struct BCSide2D{
     enum class Type {Dirichlet, Neumann};
     Type type;
     std::vector<double> val; //pressure if Dirichlet, flux if Neumann
-    // static BCSide2D Dirichlet(std::vector<double>& p){
-        //     return {Type::Dirichlet, p};
-        // }
-        // static BCSide2D Neumann(std::vector<double>& g){
-            //     return {Type::Neumann, g};
-            // }
     static BCSide2D Dirichlet(int N, double p){
         auto temp = std::vector<double>(N, p);
         return {Type::Dirichlet, temp};
