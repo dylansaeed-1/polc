@@ -1,4 +1,5 @@
 #include "linalg.h"
+#include "utils.h"
 #include <functional>
 #include <iostream>
 #include <vector>
@@ -92,80 +93,61 @@ inline void apply_A_2D(const Field2D& K, const Field2D& p, Field2D& Ap){
             Ap(i+1, j)-= F/dx;
         }
     }
-
-    //Left boundary CURRENTLY ONLY HANDLES DIRICHLET
-    for (int j = 0; j < Ny; ++j){
-        K_r = K(0, j);
-        F = -K_r * (2.0 * (p(0, j))/dx);
-        Ap(0, j)-= F/dx;
-    }
-
-    //Bottom boundary (Dirichlet only for now)
-    for (int i = 0; i < Nx; ++i){
-        K_r = K(i, 0);
-        F = -K_r * (2.0 * (p(i, 0))/dy);
-        Ap(i, 0)-= F/dy;
-    }
-
-    //Right boundary (Dirichlet only for now)
-    for (int j = 0; j < Ny; ++j){
-        K_r = K(Nx-1, j);
-        F = -K_r * (2.0 * (p(Nx-1, j))/dx);
-        Ap(Nx-1, j)-= F/dx;
-    }
-
-    //Top boundary (Dirichlet only for now)
-    for (int i = 0; i < Nx; ++i){
-        K_r = K(i, Ny-1);
-        F = -K_r * (2.0 * (p(i, Ny-1))/dy);
-        Ap(i, Ny-1)-= F/dy;
-    }
 }
 
-inline void build_bc_contrib(const Field2D& K, const BC2D& bc, Field2D& g){
+inline void build_bc_contrib(const Field2D& K,const Field2D& p, const BC2D& bc, Field2D& g){
     //Left boundary (Dirichlet only for now)
     double K_r, b_val, F;
     const int Nx = K.g.Nx, Ny = K.g.Ny;
     const double dx = K.g.dx, dy = K.g.dy;
- 
+    
     for (int j = 0; j < Ny; ++j){
+        b_val = bc.left.val[j];
         if (bc.left.type == BCSide2D::Type::Dirichlet){
-            b_val = bc.left.val[j];
             K_r = K(0, j);
-            F = -K_r * (2.0 * (-b_val)/dx);
-
+            F = -K_r * (2.0 * (p(0, j) -b_val)/dx);
             g(0, j)-= F/dx;
+        }
+        else{
+            g(0,j)-=b_val/dx;
         }
     }
     //Bottom boundary (Dirichlet only for now)
     for (int i = 0; i < Nx; ++i){
+        b_val = bc.bottom.val[i];
         if (bc.bottom.type == BCSide2D::Type::Dirichlet){
-            b_val = bc.bottom.val[i];
             K_r = K(i, 0);
-            F = -K_r * (2.0 * (-b_val)/dy);
-
+            F = -K_r * (2.0 * (p(i, 0) -b_val)/dy);
             g(i, 0)-= F/dy;
+        }
+        else{
+            g(i, 0)-=b_val/dy;
         }
     }
 
     //Right boundary (Dirichlet only for now)
     for (int j = 0; j < Ny; ++j){
+        b_val = bc.right.val[j];
         if (bc.right.type == BCSide2D::Type::Dirichlet){            
-            b_val = bc.right.val[j];
             K_r = K(Nx-1, j);
-            F = -K_r * (2.0 * b_val/dx);
-
+            F = -K_r * (2.0 * (b_val - p(Nx-1, j))/dx);
             g(Nx-1, j)+= F/dx;
+        }
+        else{
+            g(Nx-1, j)+=b_val/dx;
         }
     }
 
     //Top boundary (Dirichlet only for now)
     for (int i = 0; i < Nx; ++i){
+        b_val = bc.top.val[i];
         if (bc.top.type == BCSide2D::Type::Dirichlet){
-            b_val = bc.top.val[i];
             K_r = K(i, Ny-1);
-            F = -K_r * (2.0 * b_val/dy);
+            F = -K_r * (2.0 * (b_val - p(i, Ny-1))/dy);
             g(i, Ny-1)+= F/dy;
+        }
+        else{
+            g(i, Ny-1)+= b_val/dy;
         }
     }
 }
@@ -194,20 +176,50 @@ inline void residual_1D(const Field1D& K, const BC1D& bc, const Field1D& p, cons
         r(i)-= q(i);
     }
 }
-inline void residual_2D(const Field2D& K, const Field2D& p, const Field2D& q, Field2D& r){
-    apply_A_2D(K, p, r);
-    axpy(-1.0, q, r); // y + ax
-}
+// inline void residual_2D(const Field2D& K, const Field2D& p, const Field2D& q, Field2D& r){
+//     apply_A_2D(K, p, r);
+//     axpy(-1.0, q, r); // y + ax
+// }
 
 inline void richards_residual(const Field2D& p, const Field2D& q, const BC2D& bc, Field2D& R) {
     // 1. Compute K(p)  
     // 2. Compute Ap = ∇·(K(p) ∇p)
     // 3. R = Ap - q + g
-    // Basic test, let K(p) = (1 + p^2)
     auto grid = p.g;
-    Field2D K(grid, 1.0), Ap(grid, 0.0), g(grid, 0.0);
-    K+=p*p;
+    Field2D Ap(grid, 0.0), g(grid, 0.0);
+    auto K = K_richards(p);
     apply_A_2D(K, p, Ap);
-    build_bc_contrib(K, bc, g);
+    build_bc_contrib(K, p, bc, g);
     R = Ap - q + g;
 } 
+
+
+
+
+    // Left boundary CURRENTLY ONLY HANDLES DIRICHLET
+    // for (int j = 0; j < Ny; ++j){
+    //     K_r = K(0, j);
+    //     F = -K_r * (2.0 * (p(0, j))/dx);
+    //     Ap(0, j)-= F/dx;
+    // }
+
+    // //Bottom boundary (Dirichlet only for now)
+    // for (int i = 0; i < Nx; ++i){
+    //     K_r = K(i, 0);
+    //     F = -K_r * (2.0 * (p(i, 0))/dy);
+    //     Ap(i, 0)-= F/dy;
+    // }
+
+    // // Right boundary (Dirichlet only for now)
+    // for (int j = 0; j < Ny; ++j){
+    //     K_r = K(Nx-1, j);
+    //     F = -K_r * (2.0 * (p(Nx-1, j))/dx);
+    //     Ap(Nx-1, j)-= F/dx;
+    // }
+
+    // //Top boundary (Dirichlet only for now)
+    // for (int i = 0; i < Nx; ++i){
+    //     K_r = K(i, Ny-1);
+    //     F = -K_r * (2.0 * (p(i, Ny-1))/dy);
+    //     Ap(i, Ny-1)-= F/dy;
+    // }

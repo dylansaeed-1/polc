@@ -12,8 +12,8 @@
 /*
 2D test for manufactured solution of p(x, y) = x^2 + y^2
 => darcy operator K d/dx (p) = (2x, 2y) and so q(x,y) = -4.
-
 */
+
 void run_test_CG(int N){
     
     int Nx = N, Ny = N;
@@ -44,7 +44,7 @@ void run_test_CG(int N){
         }
     }
     
-    build_bc_contrib(K, bc, g);
+    build_bc_contrib(K, p, bc, g);
     auto A = [&](const Field2D& x, Field2D& Ax){
         apply_A_2D(K, x, Ax);  // homogeneous operator (no g => SPD)
     };
@@ -60,21 +60,15 @@ void run_test_JFNK(int N){
     int Nx = N, Ny = N;
     Grid2D grid(Nx, Ny, 1.0, 1.0);
     Field2D p(grid), q_nl(grid), p_exact(grid), R(grid);
-
-    BC2D bc{
-        BCSide2D::Dirichlet(Ny, 0.0),  // left
-        BCSide2D::Dirichlet(Ny, 0.0),  // right
-        BCSide2D::Dirichlet(Nx, 0.0),  // bottom
-        BCSide2D::Dirichlet(Nx, 0.0)   // top
-    };
-
+    
     for (int i = 0; i < Nx; ++i){
         double y = grid.y_face(i);
         for (int j = 0; j < Ny; ++j){
             double x = grid.x_face(j);
-            p_exact(i, j) = cos(PI * x) * sin(PI * y);
+            p_exact(i, j) = sin(PI*x)*sin(PI * y);
         }
     }
+    auto bc = set_bc(p_exact);
 
     Field2D q_zero(grid, 0.0);
     richards_residual(p_exact, q_zero, bc, R);
@@ -89,10 +83,32 @@ void run_test_JFNK(int N){
     write_field_csv(p, "p_case1_jfnk.csv");
     std::cout << "JFNK 2D converged in " << iters << " Newton iterations\n";
 }
+void run_test_richards(int N){
+    
+    int Nx = N, Ny = N;
+    Grid2D grid(Nx, Ny, 1.0, 1.0);
+    Field2D p(grid, -0.5), q(grid, 0.0), R(grid);
+    BC2D bc{
+        BCSide2D::Dirichlet(Ny, 0.0),  // left
+        BCSide2D::Neumann(Ny, 0.0),  // right
+        BCSide2D::Neumann(Nx, 0.0),  // bottom
+        BCSide2D::Dirichlet(Nx, -5.0)   // top
+    };
+    
+    richards_residual(p, q, bc, R);
+    auto F = [&](const Field2D& p, Field2D& r){ //Residual function we want to minimise
+        richards_residual(p, q, bc, r);
+    };
+    int iters = jfnk_solve_2D(F, p);
+    auto K = K_richards(p);
+    write_field_csv(p, "p_richards.csv");
+    write_field_csv(K, "k_richards.csv");
+    std::cout << "JFNK 2D converged in " << iters << " Newton iterations\n";
+}
 
 int main() {    
-    int N = 50;
-    run_test_JFNK(N);
+    int N = 128;
+    run_test_richards(N);
     return 0;
 }
 
