@@ -18,7 +18,7 @@ auto dot(const Field&a , const Field& b) -> double{
 
 // y= y + ax
 template <typename Field>
-auto axpy(const double a, const Field& x, Field& y) -> void{
+auto axpy(const double a, const Field   & x, Field& y) -> void{
     assert(x.size() == y.size());
     
     for(int i = 0; i < y.size(); ++i){
@@ -50,10 +50,10 @@ auto scal(const double a, Field& x) -> void{
 }
 
 template <typename Field>
-auto inf_norm(Field& x) -> double{
+auto inf_norm(const Field& x) -> double{
     double norm_inf = 0.0;
     for(auto xi : x.v){
-        norm_inf = std::max(norm_inf, xi);
+        norm_inf = std::max(norm_inf, std::abs(xi));
     }
     return norm_inf;
 }

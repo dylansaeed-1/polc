@@ -10,3 +10,6 @@ build/
 cpp_solver/build
 .vscode
 cpp_solver/.cache
+*.csv
+*.ipynb
+cpp_solver/include/DEPRECATED.h

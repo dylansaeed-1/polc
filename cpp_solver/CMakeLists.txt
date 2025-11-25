@@ -33,11 +33,12 @@ if (POLC_USE_SANITIZERS AND CMAKE_BUILD_TYPE MATCHES "Debug")
 endif()
 
 # Sources
-add_executable(server
-  src/server.cpp
+add_executable(main
+  src/main.cpp
+  src/test.cpp
 )
 
-target_include_directories(server PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(main PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Placeholder for gRPC/protobuf later
 # add_subdirectory(third_party/grpc ...)  or find_package(gRPC CONFIG REQUIRED)

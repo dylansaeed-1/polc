@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <cassert>
+#include <linalg.h>
 #pragma once
 
 
@@ -11,6 +12,13 @@ struct Grid1D{
     double  dx; // spacing
 
     Grid1D(int N_, double L_) : N(N_), L(L_), dx(L_/N_){}
+    Grid1D(const Grid1D& x) = default;
+    Grid1D(Grid1D&& other) noexcept = default;
+
+    Grid1D& operator=(const Grid1D& other) = default;
+    Grid1D& operator=(Grid1D&& other) = default;
+
+
     inline double x_cell(int i) const{
         return (i + 0.5) * dx;
     }
@@ -24,8 +32,14 @@ struct Grid2D{
     int Nx, Ny;
     double Lx, Ly;
     double dx, dy;
-    Grid2D(int Nx, int Ny, double Lx, double Ly): Nx(Nx), Ny(Ny), Lx(Lx), Ly(Ly), dx(Lx/Nx), dy(Ly/Ny) {};
 
+    Grid2D(int Nx, int Ny, double Lx, double Ly): Nx(Nx), Ny(Ny), Lx(Lx), Ly(Ly), dx(Lx/Nx), dy(Ly/Ny) {};
+    Grid2D(const Grid2D& x) = default;
+    Grid2D(Grid2D&& other) noexcept = default;
+
+    Grid2D& operator=(const Grid2D& other) = default;
+    Grid2D& operator=(Grid2D&& other) = default;
+    
     inline double x_cell(int i) const{
         return (i + 0.5) * dx;
     }
@@ -40,34 +54,47 @@ struct Grid2D{
     }
 };
 
-
 //Storing Scalar fields
 struct Field1D{
-    const Grid1D& g;
+    Grid1D g;
     std::vector<double> v;
-    explicit Field1D(Grid1D& grid, double init=0.0) : g(grid), v(static_cast<size_t>(grid.N), init){}
-    Field1D(Field1D& x): g(x.g), v(x.v){}
 
-    Field1D& operator=(Field1D other){
-        std::swap(v, other.v);
-        return *this;
-    }
+    explicit Field1D(const Grid1D& grid, double init=0.0) 
+        : g(grid), v(static_cast<size_t>(grid.N), init){}
+
+    Field1D(const Field1D& x) = default;
+    Field1D(Field1D&& other) noexcept = default;
+
+    Field1D& operator=(const Field1D& other) = default;
+    Field1D& operator=(Field1D&& other) = default;
+
     double& operator()(int i){ return v[static_cast<size_t>(i)];}
     double operator()(int i) const {return v[static_cast<size_t>(i)];}
+
     inline int size() const {return g.N;}
     inline void fill(const double val){std::fill(v.begin(), v.end(), val);}
 };
 
 struct Field2D{
-    const Grid2D g;
+    Grid2D g;
     std::vector<double> v;
-    explicit Field2D(const Grid2D& grid, const double init=0.0) : g(grid), v(static_cast<size_t>(grid.Nx*grid.Ny), init) {};
-    
-    Field2D(const Field2D& x) : g(x.g), v(x.v) {};
-    Field2D& operator=(Field2D other){
-        std::swap(v, other.v);
+
+    template<typename Op>
+    Field2D& elementwise_assign(const Field2D& other, Op op) {
+        assert(size() == other.size());
+        for (int i = 0; i < size(); ++i) {
+            v[i] = op(v[i], other.v[i]);
+        }
         return *this;
     }
+    
+    //Constructors
+    explicit Field2D(const Grid2D& grid, double init=0.0) : g(grid), v(static_cast<size_t>(grid.Nx*grid.Ny), init) {};
+    Field2D(const Field2D& x) = default;
+    Field2D(Field2D&& other) noexcept = default;
+    Field2D& operator=(const Field2D& other) = default;
+    Field2D& operator=(Field2D&& other) = default;
+    
     inline int idx(int i, int j) const {return g.Nx*j + i;} //i = x, j = y
     double& operator()(int i, int j){
         return v[this->idx(i, j)];
@@ -76,48 +103,49 @@ struct Field2D{
         return v[this->idx(i, j)];
     }
     //Vector operations
-    Field2D& operator-=(const Field2D& other){
-        assert(size() == other.size());
-        for(int i = 0; i < size(); ++i){
-            v[i] -= other.v[i];
-        }
-        return *this;
-    }
+    Field2D& operator-=(const Field2D& other){return elementwise_assign(other, [&](double a, double b){return a - b;});}
+    Field2D& operator+=(const Field2D& other){return elementwise_assign(other, [&](double a, double b){return a + b;});}
+    Field2D& operator*=(const Field2D& other){return elementwise_assign(other, [&](double a, double b){return a * b;});}
     Field2D operator-(const Field2D& other) const {
         Field2D result = *this;
         result -= other;
         return result;
-    }
-
-    Field2D& operator+=(const Field2D& other){
-        assert(other.size() == size());
-        for(int i = 0; i < other.size(); ++i){
-            v[i]+=other.v[i];
-        }
-        return *this;
     }
     Field2D operator+(const Field2D& other) const {
         Field2D result = *this;
         result += other;
         return result;
     }
-    Field2D& operator*=(const Field2D& other){
-        assert(other.size() == size());
-        for(int i = 0; i < size(); ++i){
-            v[i]*=other.v[i];
-        }
-        return *this;
-    }
     Field2D operator*(const Field2D& other) const{
         Field2D result = *this;
         result*=other;
         return result;
     }
-    
 
+
+    Field2D& operator*=(double a){
+        for (auto & x : v) x*=a;
+        return *this;
+    }
+    Field2D& operator/=(double a){
+        for (auto & x : v) x/=a;
+        return *this;
+    }
+    friend Field2D operator*(Field2D lhs, double a) {
+        lhs *= a;
+        return lhs;
+    }
+    friend Field2D operator*(double a, Field2D rhs) {
+        rhs *= a;
+        return rhs;
+    }
+    friend Field2D operator/(Field2D lhs, double a) {
+        lhs /= a;
+        return lhs;
+    }
 
     inline int size() const {return (int)v.size();}
-    inline void fill(const double val){ std::fill(v.begin(), v.end(), val);} 
+    inline void fill(double val){ std::fill(v.begin(), v.end(), val);} 
 };
 
 
